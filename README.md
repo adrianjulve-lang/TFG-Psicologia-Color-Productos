@@ -2,7 +2,7 @@
 
 **Autor:** Adrián Julve Navarro
 **Universidad:** UFV — Grado en Business Analytics
-**Curso:** 2024-2025
+**Curso:** 2025-2026
 
 ---
 
@@ -88,7 +88,6 @@ TFG/
         ├── 📂 abo/            ← Gráficos específicos de la fuente ABO
         ├── 📂 mahou/          ← Gráficos específicos de la fuente Mahou
         ├── 📂 openfoodfacts/  ← Gráficos específicos de OFF
-        └── 📂 analisis_dato/  ← Gráficos de modelos ML (matrices de confusión, etc.)
 ```
 
 ---
