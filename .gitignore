@@ -1,0 +1,45 @@
+# =============================================
+# ARCHIVOS GRANDES / IMÁGENES SCRAPEADAS
+# =============================================
+
+# Dataset de Open Images (5.7 GB)
+Data/
+
+# Imágenes descargadas en el scraping (no son necesarias para reproducir el análisis)
+DATOS SCRAPPING/abo_data/imagenes/
+DATOS SCRAPPING/abo_data/cache/
+DATOS SCRAPPING/mahou_data/imagenes/
+DATOS SCRAPPING/openfoodfacts_data/imagenes/
+
+# Carpeta backup del scraping
+DATOS SCRAPPING POR SI ACASO/
+
+# Archivos ZIP grandes
+*.zip
+
+# Carpeta vacía de pruebas
+Prueba Recámara/
+
+# =============================================
+# PYTHON
+# =============================================
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.ipynb_checkpoints/
+
+# =============================================
+# SISTEMA
+# =============================================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.log

@@ -1,0 +1,4 @@
+﻿Modelo,Accuracy,F1-Macro,AUC-ROC,CV Acc. ±σ
+Random Forest,0.9574,0.9569,0.9992,0.9622 ± 0.0037
+XGBoost,0.9653,0.9561,0.9994,0.9723 ± 0.0044
+Red Neuronal MLP,0.9037,0.8847,0.9958,0.9152 ± 0.0173
