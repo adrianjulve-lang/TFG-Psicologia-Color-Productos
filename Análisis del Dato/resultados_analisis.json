@@ -1,0 +1,80 @@
+{
+  "fecha": "2026-03-27T12:41:41.927225",
+  "n_muestras": 4465,
+  "n_train": 3572,
+  "n_test": 893,
+  "clases": [
+    "Aburrimiento",
+    "Alegría",
+    "Calma",
+    "Energía",
+    "Ira",
+    "Neutro/Ambiguo",
+    "Relajación",
+    "Romanticismo",
+    "Tristeza"
+  ],
+  "random_forest": {
+    "accuracy": 0.8903,
+    "f1_ponderado": 0.8897,
+    "precision": 0.8906,
+    "recall": 0.8903,
+    "cv_media": 0.8905,
+    "cv_std": 0.0017,
+    "f1_por_clase": {
+      "Aburrimiento": 0.8881,
+      "Alegría": 0.8806,
+      "Calma": 0.8163,
+      "Energía": 0.9177,
+      "Ira": 0.8333,
+      "Neutro/Ambiguo": 0.8235,
+      "Relajación": 0.9783,
+      "Romanticismo": 0.8992,
+      "Tristeza": 0.9155
+    }
+  },
+  "mlp": {
+    "accuracy": 0.8847,
+    "f1_ponderado": 0.8845,
+    "precision": 0.8897,
+    "recall": 0.8847,
+    "cv_media": 0.8872,
+    "cv_std": 0.0134,
+    "epocas_entrenadas": 108,
+    "f1_por_clase": {
+      "Aburrimiento": 0.8839,
+      "Alegría": 0.8456,
+      "Calma": 0.8636,
+      "Energía": 0.9043,
+      "Ira": 0.8462,
+      "Neutro/Ambiguo": 0.8184,
+      "Relajación": 0.9613,
+      "Romanticismo": 0.8971,
+      "Tristeza": 0.9242
+    }
+  },
+  "multioutput_svr": {
+    "r2_global": 0.9781,
+    "rmse_global": 0.0093,
+    "r2_por_score": {
+      "Ira": 0.955,
+      "Tristeza": 0.9867,
+      "Romanticismo": 0.9775,
+      "Energía": 0.9847,
+      "Alegría": 0.9678,
+      "Relajación": 0.9879,
+      "Calma": 0.9838,
+      "Aburrimiento": 0.9816
+    },
+    "rmse_por_score": {
+      "Ira": 0.0092,
+      "Tristeza": 0.0094,
+      "Romanticismo": 0.009,
+      "Energía": 0.0077,
+      "Alegría": 0.012,
+      "Relajación": 0.0098,
+      "Calma": 0.0082,
+      "Aburrimiento": 0.009
+    }
+  }
+}
