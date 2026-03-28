@@ -55,7 +55,6 @@ TFG/
 ├── 📜 SCRIPT 1 - SCRAPING Y COLOR.py                     ← SCRIPT 1 (scraping)
 ├── 📜 SCRIPT 2, VARIABLES ECONOMICAS, EMOCIONAS
 │      E INGENIERIA DEL DATO.py                           ← SCRIPT 2 (ingeniería)
-├── 📜 SCRIPT 3 - CREACIÓN DE MODELOS.py                  ← SCRIPT 3 (modelos ML)
 │
 ├── 📂 DATOS SCRAPPING/
 │   ├── Dataset_combinado_sin_emociones.csv   ← Salida del Script 1
@@ -90,7 +89,8 @@ TFG/
 │       ├── 📂 mahou/          ← Gráficos específicos de la fuente Mahou
 │       └── 📂 openfoodfacts/  ← Gráficos específicos de OFF
 │
-└── 📂 Análisis del Dato/                                 ← Salidas del Script 3
+└── 📂 Análisis del Dato/                                 ← Script 3 + salidas
+    ├── 📜 SCRIPT 3 - CREACIÓN DE MODELOS.py ← SCRIPT 3 (modelos ML)
     ├── resultados_analisis.json              ← Métricas de todos los modelos
     ├── resultados_analisis.xlsx              ← Métricas en formato Excel
     ├── 📂 graficos/                          ← 12 gráficos de análisis del dato (G1–G12)
