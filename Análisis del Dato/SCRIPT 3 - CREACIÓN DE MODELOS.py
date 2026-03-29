@@ -261,21 +261,21 @@ _param_rf = {
     "min_samples_leaf":[2, 3, 5, 8],               # Mínimo de productos que debe haber en cada hoja del árbol para que sea válida
     "max_features":    ["sqrt", "log2", 0.4, 0.6], # Cuántas variables usar en cada división: raíz cuadrada, logaritmo, o el 40-60% del total
 }
-# 👆 Diccionario con todas las combinaciones de configuración que se van a probar para encontrar el mejor Random Forest posible
+# Diccionario con todas las combinaciones de configuración que se van a probar para encontrar el mejor Random Forest posible
 
 _search_rf = RandomizedSearchCV(
     RandomForestClassifier(class_weight="balanced", random_state=42, n_jobs=-1),
-    # 👆 Crea el modelo Random Forest base con:
+    # Crea el modelo Random Forest base con:
     #    - class_weight="balanced": compensa automáticamente si hay emociones con muchos más productos que otras
     #    - random_state=42: semilla fija para que los resultados sean reproducibles (siempre igual)
     #    - n_jobs=-1: usa todos los núcleos del procesador para ir más rápido
     _param_rf, n_iter=25, cv=cv, scoring="f1_weighted",
-    # 👆 Le pasa el diccionario de parámetros y le dice:
+    # Le pasa el diccionario de parámetros y le dice:
     #    - n_iter=25: que pruebe solo 25 combinaciones aleatorias (no todas, que serían cientos)
     #    - cv=cv: que use la validación cruzada de 5 partes definida antes
     #    - scoring="f1_weighted": que elija la mejor combinación según el F1 ponderado
     random_state=42, n_jobs=-1, verbose=0
-    # 👆 - random_state=42: misma semilla para reproducibilidad en la búsqueda
+    # - random_state=42: misma semilla para reproducibilidad en la búsqueda
     #    - n_jobs=-1: paraleliza la búsqueda en todos los núcleos disponibles
     #    - verbose=0: no muestra mensajes intermedios durante la búsqueda
 )
