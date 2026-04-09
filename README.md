@@ -10,7 +10,7 @@
 
 Este TFG investiga si el color de los productos de consumo está alineado con las emociones que se espera que transmitan según la psicología del color. La hipótesis de partida es que marcas y fabricantes diseñan su packaging de forma que el color dominante del producto evoque una emoción concreta (por ejemplo, una cerveza debería transmitir relajación, un refresco energía).
 
-Para comprobarlo, se construye desde cero un dataset de más de 6.000 productos reales con sus colores extraídos automáticamente de imagen, se les asigna una emoción basada en modelos científicos del color, y se analiza cuántos productos están realmente alineados con la emoción óptima para su categoría.
+Para comprobarlo, se construye desde cero un dataset de más de 5.000 productos reales con sus colores extraídos automáticamente de imagen, se les asigna una emoción basada en modelos científicos del color, y se analiza cuántos productos están realmente alineados con la emoción óptima para su categoría.
 
 ---
 
