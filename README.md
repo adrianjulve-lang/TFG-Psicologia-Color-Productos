@@ -51,23 +51,22 @@ Se usa el espacio **CIELAB** porque está diseñado para aproximarse a la percep
 ```
 TFG/
 │
-├── 📜 Exploración Inicial de las 3 fuentes de datos.py   ← SCRIPT 0 (explorar)
-├── 📜 SCRIPT 1 - SCRAPING Y COLOR.py                     ← SCRIPT 1 (scraping)
-├── 📜 SCRIPT 2, VARIABLES ECONOMICAS, EMOCIONAS
-│      E INGENIERIA DEL DATO.py                           ← SCRIPT 2 (ingeniería)
+├── Exploración Inicial de las 3 fuentes de datos.py   ← SCRIPT 0 (explorar)
+├── SCRIPT 1 - SCRAPING Y COLOR.py                     ← SCRIPT 1 (scraping)
+├── SCRIPT 2, VARIABLES ECONOMICAS, EMOCIONAS E INGENIERIA DEL DATO.py                           ← SCRIPT 2 (ingeniería)
 │
-├── 📂 DATOS SCRAPPING/
+├── DATOS SCRAPPING/
 │   ├── Dataset_combinado_sin_emociones.csv   ← Salida del Script 1
 │   ├── Dataset_con_emociones.csv             ← Salida del Script 2
 │   │
-│   ├── 📂 abo_data/
+│   ├── abo_data/
 │   │   └── dataset_abo.csv                  ← Mini-dataset Amazon Berkeley Objects
-│   ├── 📂 mahou_data/
+│   ├── mahou_data/
 │   │   └── dataset_mahou.csv                ← Mini-dataset Mahou San Miguel
-│   ├── 📂 openfoodfacts_data/
+│   ├── openfoodfacts_data/
 │   │   └── dataset_openfoodfacts.csv        ← Mini-dataset Open Food Facts
 │   │
-│   └── 📂 graficos/                         ← Gráficos generados por el Script 2
+│   └── graficos/                         ← Gráficos generados por el Script 2
 │       ├── 00a_distribucion_fuente.png
 │       ├── 00b_top15_categorias.png
 │       ├── 01_histograma_L_capping.png
@@ -85,15 +84,15 @@ TFG/
 │       ├── 13_boxplot_fuentes_2x2.png
 │       ├── 14_histogramas_fuentes_2x2.png
 │       ├── 15_top12_categorias_fuente.png
-│       ├── 📂 abo/            ← Gráficos específicos de la fuente ABO
-│       ├── 📂 mahou/          ← Gráficos específicos de la fuente Mahou
-│       └── 📂 openfoodfacts/  ← Gráficos específicos de OFF
+│       ├──  abo/            ← Gráficos específicos de la fuente ABO
+│       ├──  mahou/          ← Gráficos específicos de la fuente Mahou
+│       └──  openfoodfacts/  ← Gráficos específicos de OFF
 │
-└── 📂 Análisis del Dato/                                 ← Script 3 + salidas
-    ├── 📜 SCRIPT 3 - CREACIÓN DE MODELOS.py ← SCRIPT 3 (modelos ML)
+└── Análisis del Dato/                                 ← Script 3 + salidas
+    ├── SCRIPT 3 - CREACIÓN DE MODELOS.py ← SCRIPT 3 (modelos ML)
     ├── resultados_analisis.json              ← Métricas de todos los modelos
     ├── resultados_analisis.xlsx              ← Métricas en formato Excel
-    ├── 📂 graficos/                          ← 12 gráficos de análisis del dato (G1–G12)
+    ├── graficos/                          ← 12 gráficos de análisis del dato (G1–G12)
     │   ├── G1_distribucion_emociones.png
     │   ├── G2_correlacion_features.png
     │   ├── G3_curva_aprendizaje_RF.png
@@ -106,7 +105,7 @@ TFG/
     │   ├── G10_perfiles_emocionales.png
     │   ├── G11_r2_por_emocion_SVR.png
     │   └── G12_resumen_comparativo.png
-    └── 📂 modelos/                           ← Modelos entrenados serializados
+    └── modelos/                           ← Modelos entrenados serializados
         ├── modelo_random_forest.pkl
         ├── modelo_mlp.pkl
         ├── modelo_multioutput_svr.pkl
