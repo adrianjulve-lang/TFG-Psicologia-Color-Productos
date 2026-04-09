@@ -366,7 +366,7 @@ F1 por clase: Relajación (97.8%), Energía (91.8%), Tristeza (91.6%), Romantici
 
 F1 por clase: Tristeza (92.4%), Relajación (96.1%), Energía (90.4%), Romanticismo (89.7%), Aburrimiento (88.4%), Ira (84.6%), Calma (86.4%), Alegría (84.6%), Neutro/Ambiguo (81.8%).
 
-#### Modelo 3 — MultiOutput SVR (modelo original ★)
+#### Modelo 3 — MultiOutput SVR (modelo original)
 
 **Qué es:** Un modelo de regresión de vectores de soporte (SVR) envuelto en `MultiOutputRegressor` para predecir simultáneamente los **8 scores emocionales** de un producto en lugar de clasificar en una sola emoción. Esto permite obtener el **perfil emocional completo** de cada producto (cuánto transmite de alegría, calma, energía, etc.).
 
