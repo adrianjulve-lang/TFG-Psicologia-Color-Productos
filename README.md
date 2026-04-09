@@ -472,12 +472,3 @@ joblib
 openpyxl
 ```
 
----
-
-## Referencias
-
-- Valdez, P., & Mehrabian, A. (1994). Effects of color on emotions. *Journal of Experimental Psychology: General*, 123(4), 394-409.
-- Gilbert, A. N., Martin, R., & Kemp, S. E. (1996). Cross-modal correspondence between vision and olfaction: the color of smells. *The American Journal of Psychology*.
-- Russell, J. A. (1980). A circumplex model of affect. *Journal of Personality and Social Psychology*, 39(6), 1161-1178.
-- [Amazon Berkeley Objects (ABO)](https://amazon-berkeley-objects.s3.amazonaws.com/index.html)
-- [Open Food Facts API](https://world.openfoodfacts.org/api/v2)
