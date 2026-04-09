@@ -279,10 +279,8 @@ Variables pensadas para dar valor interpretativo al análisis desde una perspect
 - **`temperatura_color`**: Clasifica el color en `Cálido` (a* > 3 o b* > 10), `Frío` (a* < -3 o b* < -5) o `Neutro`.
 - **`luminosidad_cat`**: Categoriza L* en tres grupos: `Oscuro` (0-40), `Medio` (40-70), `Luminoso` (70-100).
 - **`saturacion_cat`**: Categoriza hsv_s en `Apagado` (0-25), `Moderado` (25-60), `Intenso` (60-100).
-- **`coherencia_emocional`**: Puntuación de 0 a 100 que indica qué tan claramente el producto pertenece a su emoción asignada (inverso de la distancia al centroide, normalizado).
 - **`emocion_optima`**: Emoción que debería transmitir el producto según su categoría (basado en criterios de psicología del color y marketing). Por ejemplo: Cervezas → Relajación, Refrescos → Energía, Chocolates → Romanticismo.
-- **`alineacion_emocional`**: Variable binaria (0 o 1) que indica si la emoción real del producto coincide con la emoción óptima para su categoría. Es la variable de análisis central del TFG.
-
+ 
 #### Paso 10 — Normalización Min-Max
 Aplica normalización Min-Max a las 10 variables numéricas de color (`mean_R`, `mean_G`, `mean_B`, `mean_L`, `mean_a`, `mean_b`, `contrast_L`, `hsv_h`, `hsv_s`, `hsv_v`), generando columnas `*_norm` con valores en el rango [0, 1] para que el modelo no se vea afectado por diferencias de escala entre variables.
 
