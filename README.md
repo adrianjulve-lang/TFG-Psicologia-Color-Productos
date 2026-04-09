@@ -432,9 +432,7 @@ El dataset final tiene las siguientes columnas:
 | `temperatura_color` | Categórica | Cálido / Frío / Neutro |
 | `luminosidad_cat` | Categórica | Oscuro / Medio / Luminoso |
 | `saturacion_cat` | Categórica | Apagado / Moderado / Intenso |
-| `coherencia_emocional` | Numérica [0-100] | Claridad de la señal emocional del producto |
 | `emocion_optima` | Categórica | Emoción que debería transmitir según su categoría |
-| `alineacion_emocional` | Binaria (0/1) | 1 si el producto transmite la emoción óptima |
 | `mean_*_norm` | Numérica [0-1] | Versiones normalizadas Min-Max de las variables de color |
 
 ---
