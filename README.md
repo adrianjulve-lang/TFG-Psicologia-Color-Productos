@@ -1,474 +1,311 @@
-# TFG — Psicología del Color en Productos de Consumo
+# Análisis del Impacto del Color del Producto en las Emociones del Consumidor
 
-**Autor:** Adrián Julve Navarro
-**Universidad:** UFV — Grado en Business Analytics
-**Curso:** 2024-2025
+**Adrián Julve Navarro · TFG Business Analytics · UFV 2025-2026**
 
 ---
 
-## ¿De qué trata este proyecto?
+## Índice
 
-Este TFG investiga si el color de los productos de consumo está alineado con las emociones que se espera que transmitan según la psicología del color. La hipótesis de partida es que marcas y fabricantes diseñan su packaging de forma que el color dominante del producto evoque una emoción concreta (por ejemplo, una cerveza debería transmitir relajación, un refresco energía).
-
-Para comprobarlo, se construye desde cero un dataset de más de 5.000 productos reales con sus colores extraídos automáticamente de imagen, se les asigna una emoción basada en modelos científicos del color, y se analiza cuántos productos están realmente alineados con la emoción óptima para su categoría.
-
----
-
-## Fuentes de datos
-
-Se trabaja con tres fuentes de datos complementarias, elegidas para cubrir distintos tipos de producto y condición fotográfica:
-
-| Fuente | Tipo de acceso | Productos | Tipo de producto | Condición fotográfica |
-|---|---|---|---|---|
-| **Amazon Berkeley Objects (ABO)** | Descarga directa Amazon S3 (JSON.gz) | ~1.500 | Hogar, tecnología, cosmética, juguetes... | Fondo blanco estándar |
-| **Open Food Facts (OFF)** | API REST pública | ~5.000 | Alimentación y bebidas (30+ categorías) | Variable (fotos de consumidores) |
-| **Mahou San Miguel** | Web scraping con Selenium | ~200 | Cervezas, aguas, bebidas, merchandising | Fotografía de marketing |
-
-Las tres fuentes se combinan en un **dataset unificado** con las mismas variables de color, lo que permite hacer comparativas entre ellas.
+1. [Contexto y objetivo](#1-contexto-y-objetivo)
+2. [Arquitectura del proyecto](#2-arquitectura-del-proyecto)
+3. [Fuentes de datos](#3-fuentes-de-datos)
+4. [Script 0 — Exploración inicial de las 3 fuentes](#4-script-0)
+5. [Script 1 — Scraping y extracción de color](#5-script-1)
+6. [Script 2 — Ingeniería del dato](#6-script-2)
+7. [Datasets](#7-datasets)
+8. [Modelos de Machine Learning](#8-modelos-de-machine-learning)
+9. [Variables del sistema](#9-variables-del-sistema)
+10. [Marco teórico y referencias](#10-marco-teórico-y-referencias)
+11. [Requisitos técnicos](#11-requisitos-técnicos)
 
 ---
 
-## Variables de color
+## 1. Contexto y objetivo
 
-Para cada producto se descarga su imagen y se calculan automáticamente 7 variables numéricas:
+El color es el **primer estímulo visual** que procesa el cerebro al observar un producto: antes de leer el nombre, conocer el precio o analizar sus características, el consumidor ya ha generado una respuesta emocional basada exclusivamente en la información cromática.
 
-| Variable | Espacio de color | Descripción | Rango |
-|---|---|---|---|
-| `mean_R` | RGB | Media del canal Rojo pixel a pixel | 0 – 255 |
-| `mean_G` | RGB | Media del canal Verde pixel a pixel | 0 – 255 |
-| `mean_B` | RGB | Media del canal Azul pixel a pixel | 0 – 255 |
-| `mean_L` | CIELAB | Luminosidad media (L*): qué tan claro/oscuro es el producto | 0 – 100 |
-| `mean_a` | CIELAB | Componente a*: va del verde al rojo | -128 – +128 |
-| `mean_b` | CIELAB | Componente b*: va del azul al amarillo | -128 – +128 |
-| `contrast_L` | CIELAB | Desviación típica de L*: cuánto contraste interno tiene la imagen | 0 – 100 |
+Este TFG analiza esa relación de forma **cuantitativa y sistemática**. A partir de imágenes de productos de consumo obtenidas mediante web scraping, se extraen variables cromáticas y se emplean modelos de machine learning para:
 
-Se usa el espacio **CIELAB** porque está diseñado para aproximarse a la percepción humana del color: dos colores con la misma distancia numérica en CIELAB se perciben como igual de diferentes por el ojo humano, algo que no ocurre en RGB.
+- **Clasificar la emoción dominante** que transmite un producto (Random Forest, MLP).
+- **Predecir el perfil emocional completo**: la intensidad con la que se manifiestan las 8 emociones simultáneamente (MultiOutput SVR — aportación original del TFG).
+
+Este enfoque convierte la percepción del color, tradicionalmente subjetiva, en una herramienta cuantificable y aplicable en decisiones reales de diseño y marketing.
 
 ---
 
-## Estructura del repositorio
+## 2. Arquitectura del proyecto
 
 ```
 TFG/
-│
-├── Exploración Inicial de las 3 fuentes de datos.py   ← SCRIPT 0 (explorar)
-├── SCRIPT 1 - SCRAPING Y COLOR.py                     ← SCRIPT 1 (scraping)
-├── SCRIPT 2, VARIABLES ECONOMICAS, EMOCIONAS E INGENIERIA DEL DATO.py                           ← SCRIPT 2 (ingeniería)
-│
-├── DATOS SCRAPPING/
-│   ├── Dataset_combinado_sin_emociones.csv   ← Salida del Script 1
-│   ├── Dataset_con_emociones.csv             ← Salida del Script 2
-│   │
-│   ├── abo_data/
-│   │   └── dataset_abo.csv                  ← Mini-dataset Amazon Berkeley Objects
-│   ├── mahou_data/
-│   │   └── dataset_mahou.csv                ← Mini-dataset Mahou San Miguel
-│   ├── openfoodfacts_data/
-│   │   └── dataset_openfoodfacts.csv        ← Mini-dataset Open Food Facts
-│   │
-│   └── graficos/                         ← Gráficos generados por el Script 2
-│       ├── 00a_distribucion_fuente.png
-│       ├── 00b_top15_categorias.png
-│       ├── 01_histograma_L_capping.png
-│       ├── 02_distribucion_emociones.png
-│       ├── 03_boxplot_mean_L.png
-│       ├── 04_boxplot_mean_a.png
-│       ├── 05_boxplot_mean_b.png
-│       ├── 06_correlacion.png
-│       ├── 07_paleta_cromatica.png
-│       ├── 08_heatmap_emocion_categoria.png
-│       ├── 09_scatter_L_a.png
-│       ├── 10_alineacion_emocional.png
-│       ├── 11_scatter_L_b_fuentes.png
-│       ├── 12_boxplot_contrast_L.png
-│       ├── 13_boxplot_fuentes_2x2.png
-│       ├── 14_histogramas_fuentes_2x2.png
-│       ├── 15_top12_categorias_fuente.png
-│       ├──  abo/            ← Gráficos específicos de la fuente ABO
-│       ├──  mahou/          ← Gráficos específicos de la fuente Mahou
-│       └──  openfoodfacts/  ← Gráficos específicos de OFF
-│
-└── Análisis del Dato/                                 ← Script 3 + salidas
-    ├── SCRIPT 3 - CREACIÓN DE MODELOS.py ← SCRIPT 3 (modelos ML)
-    ├── resultados_analisis.json              ← Métricas de todos los modelos
-    ├── resultados_analisis.xlsx              ← Métricas en formato Excel
-    ├── graficos/                          ← 12 gráficos de análisis del dato (G1–G12)
-    │   ├── G1_distribucion_emociones.png
-    │   ├── G2_correlacion_features.png
-    │   ├── G3_curva_aprendizaje_RF.png
-    │   ├── G4_importancia_variables_RF.png
-    │   ├── G5_matriz_confusion_RF.png
-    │   ├── G6_curva_perdida_MLP.png
-    │   ├── G7_matriz_confusion_MLP.png
-    │   ├── G8_comparativa_F1_RF_vs_MLP.png
-    │   ├── G9_pred_vs_real_scores.png
-    │   ├── G10_perfiles_emocionales.png
-    │   ├── G11_r2_por_emocion_SVR.png
-    │   └── G12_resumen_comparativo.png
-    └── modelos/                           ← Modelos entrenados serializados
-        ├── modelo_random_forest.pkl
-        ├── modelo_mlp.pkl
-        ├── modelo_multioutput_svr.pkl
-        └── label_encoder.pkl
+├── Exploración Inicial de las 3 fuentes de datos.py   <- Script 0: reconocimiento sin descargar
+├── SCRIPT 1 - SCRAPING Y COLOR.py                     <- Script 1: scraping + variables cromáticas
+├── SCRIPT 2, VARIABLES ECONOMICAS, EMOCIONES E
+│   INGENIERIA DEL DATO.py                             <- Script 2: ingeniería del dato completa
+└── DATOS SCRAPPING/
+    ├── Dataset_combinado_sin_emociones.csv             <- Output de Script 1
+    ├── Dataset_con_emociones.csv                       <- Output de Script 2
+    ├── abo_data/dataset_abo.csv
+    ├── mahou_data/dataset_mahou.csv
+    ├── openfoodfacts_data/dataset_openfoodfacts.csv
+    └── graficos/
+```
+
+**Flujo de datos:**
+
+```
+3 Fuentes Web -> Script 0 (exploración) -> Script 1 (scraping + color)
+-> Dataset sin emociones -> Script 2 (ingeniería del dato)
+-> Dataset con emociones -> Modelos ML (Random Forest + MLP + SVR)
 ```
 
 ---
 
-## Pipeline completo
+## 3. Fuentes de datos
 
-```
-SCRIPT 0                    SCRIPT 1                         SCRIPT 2                       SCRIPT 3
-─────────                   ────────                         ────────                       ────────
-Explorar estructura   →     Scraping de las 3 fuentes   →   Ingeniería del dato        →   Análisis del dato
-de las 3 fuentes            + Extracción de color            + Emociones                    + Modelos ML
-(sin descargar nada)        ↓                                ↓                              ↓
-                            Dataset_combinado_               Dataset_con_                   3 modelos .pkl
-                            sin_emociones.csv                emociones.csv                  + 12 gráficos
-```
-
----
-
-## Descripción detallada de cada script
+| Característica | Amazon Berkeley Objects | Open Food Facts | Mahou San Miguel |
+|---|---|---|---|
+| **Tipo de acceso** | Descarga directa Amazon S3 | API REST pública | Web scraping Selenium |
+| **Autenticación** | No requiere | No requiere | No requiere |
+| **Formato** | JSON.gz + CSV.gz | JSON por petición | HTML dinámico |
+| **Volumen estimado** | ~100.000+ productos | Millones de productos | ~81 productos |
+| **Categorías** | Tecnología, hogar, moda... | Alimentación y bebidas | Cervezas, aguas... |
+| **Condición fotográfica** | Fondo blanco estándar | Variable (consumidores) | Marketing profesional |
+| **Sesgo cromático** | L* alto, b* bajo | L* medio, b* medio | Packaging premium |
 
 ---
 
-### Script 0 — `Exploración Inicial de las 3 fuentes de datos.py`
+## 4. Script 0 — Exploración inicial de las 3 fuentes
 
-**Propósito:** Script de reconocimiento previo. Se ejecuta una sola vez antes de empezar a scrapearlo todo, para entender qué hay en cada fuente y cómo están estructurados los datos. No descarga imágenes ni genera ningún dataset.
+**Archivo:** `Exploración Inicial de las 3 fuentes de datos.py`
 
-**Qué hace:**
+Fase de reconocimiento previo. **No descarga imágenes ni genera datasets.**
+Se conecta a cada fuente, obtiene una muestra mínima y documenta qué variables existen, qué tipo tienen y cómo vienen estructuradas.
 
-1. **Fuente ABO (Amazon Berkeley Objects):** Se conecta al bucket público de Amazon S3, descarga el índice de imágenes (`images.csv.gz`) y una muestra de 20 productos del primer archivo de listings (`listings_0.json.gz`). Muestra todos los campos disponibles, su tipo, un ejemplo y el porcentaje de nulos.
+### Fuente 1 — Amazon Berkeley Objects (ABO)
+1. Descarga el índice de imágenes (`images.csv.gz`) desde Amazon S3 y muestra columnas, tipos y porcentaje de nulos.
+2. Descarga una muestra de 20 líneas de listings (`listings_0.json.gz`) y analiza todos los campos disponibles.
+3. Muestra un producto completo de ejemplo para entender la estructura del JSON.
 
-2. **Fuente Open Food Facts:** Llama a la API REST pública con una petición de prueba de 5 cervezas. Muestra los ~100 campos que devuelve la API por producto e identifica cuáles usaremos (código de barras, nombre, marca, categorías, URL de imagen). También consulta cuántos productos hay disponibles en 10 categorías distintas.
+### Fuente 2 — Open Food Facts (API REST)
+1. Lanza una petición de prueba con 5 productos de la categoría *cervezas*.
+2. Lista los 100+ campos disponibles por producto e identifica los 7 que usará el proyecto (`code`, `product_name`, `brands`, `categories_tags`, `image_front_url`...).
+3. Consulta cuántos productos hay en 10 categorías principales para estimar el volumen extraíble.
 
-3. **Fuente Mahou San Miguel:** Hace una petición HTTP básica a la tienda online para comprobar que responde correctamente. Explica que el contenido es dinámico (JavaScript) y por eso el scraping real requiere Selenium. Lista las 13 categorías de la tienda que se cubrirán.
+### Fuente 3 — Mahou San Miguel (Web Scraping)
+1. Lista las 13 categorías del catálogo y sus rutas URL.
+2. Verifica que la web responde (HTTP 200) y documenta por qué se necesita Selenium (contenido dinámico JavaScript).
+3. Muestra la estructura exacta del dataset que generará el scraper (11 variables).
 
-4. **Resumen comparativo:** Tabla que compara las tres fuentes en cuanto a tipo de acceso, autenticación, formato, volumen, variables, condición fotográfica y velocidad de extracción.
-
-**Librerías:** `requests`, `gzip`, `json`, `pandas`
-
----
-
-### Script 1 — `SCRIPT 1 - SCRAPING Y COLOR.py`
-
-**Propósito:** Script principal de obtención de datos. Scraping de los tres orígenes, descarga de imágenes y extracción de las variables de color. Produce los cuatro CSV de datos.
-
-#### Funciones comunes (usadas por los tres scrapers)
-
-**`descargar_imagen(imagen_url, ruta_destino, headers)`**
-Descarga una imagen de internet y la guarda en disco en formato JPEG con calidad 90. Si la imagen ya existe en la ruta indicada, no la vuelve a descargar (sistema de caché simple por ruta de archivo). Devuelve la ruta si tiene éxito o `None` si falla.
-
-**`calcular_color(ruta)`**
-Lee una imagen del disco, la convierte en una matriz NumPy y calcula las 7 variables de color:
-- `mean_R`, `mean_G`, `mean_B`: media de cada canal RGB sobre todos los píxeles.
-- Convierte la imagen de RGB a CIELAB (`skimage.color.rgb2lab`) y calcula `mean_L`, `mean_a`, `mean_b`.
-- `contrast_L`: desviación típica de L* (mide el contraste interno de la imagen).
-
-#### Scraper Mahou San Miguel
-
-**Método:** Selenium con Chrome en modo headless (sin ventana visible), ventana virtual de 1920×1080.
-
-**Proceso:**
-1. Abre Chrome automáticamente, navega a la tienda de Mahou y acepta las cookies.
-2. Para cada una de las **13 categorías** del catálogo (Mahou, San Miguel, Alhambra, Corona, Founders, Budweiser, Nómada, Brutus, Solán de Cabras, Sierra Natura, otras bebidas, cristalería, moda), recorre todas las páginas paginadas de la categoría (grupos de 12 productos) recogiendo las URLs de los productos. Hace scroll hasta el final de cada página para forzar la carga lazy de los elementos.
-3. Entra en cada URL de producto, extrae el **nombre** del producto (buscando el elemento `h1`) y la **URL de la imagen** (primero desde la metaetiqueta `og:image`, si no desde selectores CSS directos).
-4. Descarga la imagen con `descargar_imagen()` y calcula el color con `calcular_color()`.
-5. Guarda el resultado en `dataset_mahou.csv` con las columnas: `fuente`, `categoria`, `nombre`, `imagen_url`, `mean_R`, `mean_G`, `mean_B`, `mean_L`, `mean_a`, `mean_b`, `contrast_L`.
-
-**Resultado:** ~200 productos
-
-#### Scraper Amazon Berkeley Objects (ABO)
-
-**Método:** Descarga directa desde el bucket público de Amazon S3. No requiere autenticación. Usa caché en disco para no volver a descargar los archivos comprimidos si ya existen.
-
-**Proceso:**
-1. Descarga el índice de imágenes (`images.csv.gz`) desde S3, que contiene el mapeo entre `image_id` y la URL real de la imagen en `m.media-amazon.com`.
-2. Itera sobre los 10 archivos de listings (`listings_0.json.gz` a `listings_9.json.gz`), cada uno con miles de productos en formato JSON-Lines (una línea = un producto en JSON). Los archivos se descomprimen en memoria.
-3. Para cada producto, extrae el `product_type` y lo compara con un conjunto de **70 categorías de interés** (hogar, cocina, tecnología, cosmética, juguetes, deporte, mascotas...). Si no está en ese conjunto, se descarta.
-4. Para los productos que pasan el filtro, extrae nombre (priorizando inglés), marca, categoría traducida al español (mediante un diccionario de mapeo) y el `main_image_id`.
-5. Construye la URL de imagen en formato `https://m.media-amazon.com/images/I/{image_id}._SX512_.jpg`, descarga la imagen y calcula el color.
-6. Para cuando llega a 10.000 productos.
-
-**Resultado:** ~1.500 productos (los que tienen imagen disponible y categoría de interés)
-
-#### Scraper Open Food Facts (OFF)
-
-**Método:** API REST pública `https://world.openfoodfacts.org/api/v2/search`. Pausa de 1 segundo entre peticiones para no saturar el servidor.
-
-**Proceso:**
-1. Para cada una de las **30 categorías de alimentación** (bebidas, agua, zumos, refrescos, cervezas, vinos, lácteos, leche, yogures, quesos, cereales, galletas, chocolates, snacks, patatas fritas, conservas, salsas, aceites, pasta, arroz, pan, congelados, carne, pescado, frutas, verduras, legumbres, café, condimentos), hace peticiones paginadas de 50 productos por petición.
-2. De cada producto extrae código de barras, nombre, marca, categorías y URL de imagen frontal (`image_front_url`).
-3. Descarga la imagen, calcula el color y guarda la fila.
-4. Para cuando llega a 30.000 productos en total entre todas las categorías.
-
-**Resultado:** ~5.000 productos (los que tienen imagen disponible)
-
-#### Combinación final
-
-Una vez que los tres scrapers terminan, el script combina los tres DataFrames con `pd.concat()` y guarda el resultado en `Dataset_combinado_sin_emociones.csv`.
-
-**Librerías:** `requests`, `pandas`, `numpy`, `matplotlib`, `PIL` (Pillow), `skimage`, `tqdm`, `selenium`, `webdriver_manager`
+### Resumen comparativo
+Tabla comparando las 3 fuentes en 9 dimensiones: tipo de acceso, volumen, sesgo cromático, velocidad de extracción, etc.
 
 ---
 
-### Script 2 — `SCRIPT 2, VARIABLES ECONOMICAS, EMOCIONAS E INGENIERIA DEL DATO.py`
+## 5. Script 1 — Scraping y extracción de color
 
-**Propósito:** Ingeniería del dato completa. Parte del dataset combinado sin emociones y lo enriquece con limpieza, nuevas variables, la variable objetivo (emoción), variables de negocio, normalización y los gráficos del análisis exploratorio.
+**Archivo:** `SCRIPT 1 - SCRAPING Y COLOR.py`
 
-#### Paso 1 — Carga de datos
-Lee `Dataset_combinado_sin_emociones.csv` y documenta el número de filas y columnas iniciales.
+Script principal de obtención de datos. Realiza el scraping completo de las tres fuentes y extrae las 7 variables cromáticas de cada imagen descargada.
 
-#### Paso 2 — Gráficos iniciales (estado previo a transformaciones)
-Genera dos gráficos del dataset en crudo para poder comparar antes/después:
-- **Gráfico 0a:** Número de productos por fuente de datos (barras).
-- **Gráfico 0b:** Top 15 categorías con más productos (barras horizontales).
+### Función central: `calcular_color(ruta)`
 
-#### Paso 3 — Tratamiento de nulos
-Calcula el porcentaje de nulos en las 7 variables de color:
-- Si es **< 1%**: elimina directamente las filas con nulos (son tan pocas que no sesgan).
-- Si es **≥ 1%**: reemplaza los nulos por la **mediana** de cada variable (interpolación robusta frente a outliers).
+Recibe la ruta de una imagen, la procesa pixel a pixel y devuelve 7 métricas cromáticas:
 
-#### Paso 4 — Eliminación de duplicados
-Elimina filas con la misma `imagen_url`, ya que si dos productos tienen la misma URL de imagen son el mismo producto (independientemente de que tengan nombres distintos por error de scraping).
+| Variable | Espacio | Descripción | Rango |
+|---|---|---|---|
+| `mean_R` | RGB | Media del canal Rojo | 0-255 |
+| `mean_G` | RGB | Media del canal Verde | 0-255 |
+| `mean_B` | RGB | Media del canal Azul | 0-255 |
+| `mean_L` | CIELAB | Luminosidad media (oscuro a luminoso) | 0-100 |
+| `mean_a` | CIELAB | Componente rojo-verde | -128 a 128 |
+| `mean_b` | CIELAB | Componente amarillo-azul | -128 a 128 |
+| `contrast_L` | CIELAB | Desviación típica de L* (contraste interno) | 0-100 |
 
-#### Paso 5 — Validación de rangos
-Comprueba que todos los valores están dentro de sus rangos teóricos (RGB: 0-255, L*: 0-100, a* y b*: -128 a +128, contrast_L: 0-100). Informa de cuántos valores están fuera de rango en cada variable.
+El espacio **CIELAB** se usa porque distancias iguales corresponden a diferencias perceptivas iguales para el ojo humano, ideal para predecir respuestas emocionales.
 
-#### Paso 6 — Tratamiento de outliers (IQR con capping)
-Usa el método **IQR (rango intercuartílico)** para cada variable: calcula Q1 y Q3, define los límites como `Q1 - 1.5×IQR` y `Q3 + 1.5×IQR` (intersectados con los rangos teóricos), y aplica **capping** (los valores fuera del límite se recortan al límite, no se eliminan). Se decide no eliminar outliers porque colores extremos son información válida y valiosa para el análisis.
+### Parte 1 — Scraper Mahou San Miguel (Selenium)
+Mahou usa JavaScript dinámico, se automatiza **Chrome en modo headless** con Selenium.
+1. Abre Chrome en segundo plano y acepta cookies automáticamente.
+2. Recorre 13 categorías del catálogo haciendo scroll automático (lazy loading).
+3. Extrae nombre, URL de imagen (meta `og:image`) y calcula las 7 variables cromáticas.
+4. Pausa de 3 segundos entre peticiones para no saturar el servidor.
 
-#### Paso 7 — Variables HSV
-Convierte las variables RGB a **HSV** (Hue, Saturation, Value) para añadir una representación más intuitiva del color:
-- `hsv_h`: **Tono** — el color en sí, expresado como ángulo de 0° a 360° (0°=rojo, 120°=verde, 240°=azul).
-- `hsv_s`: **Saturación** — qué tan "puro" o "vivo" es el color (0=gris, 100=color puro).
-- `hsv_v`: **Brillo** — qué tan claro es el color (0=negro, 100=máximo brillo).
+### Parte 2 — Scraper Amazon Berkeley Objects (ABO)
+1. Descarga archivos `.json.gz` desde Amazon S3 sin autenticación.
+2. Extrae `item_id`, `item_name`, `product_type`, `main_image_id`.
+3. Cruza con el índice de imágenes, descarga y calcula las 7 variables.
 
-Estas variables capturan aspectos del color difíciles de interpretar directamente desde RGB y complementan al espacio CIELAB para el modelo.
+### Parte 3 — Scraper Open Food Facts (API REST)
+1. Consulta la API por categorías (`en:beers`, `en:chocolates`, etc.).
+2. Pagina en grupos de 100 productos con pausa de 1 segundo entre peticiones.
+3. Extrae código de barras, nombre, marca, categorías y URL de imagen frontal.
 
-#### Paso 8 — Variable objetivo: Emoción
-
-Se asigna una emoción a cada producto mediante un **sistema de scoring gaussiano ponderado** en el espacio CIELAB, basado en tres referencias científicas:
-- **Valdez & Mehrabian (1994):** pesos de L* para emociones pasivas.
-- **Gilbert et al. (2016):** pesos de Croma C* y ángulo de tono H* para emociones activas.
-- **Russell (1980):** modelo circunflejo (el espacio emocional es continuo y circular).
-
-Para cada producto se calcula el **Croma** `C* = √(a*² + b*²)` (intensidad total del color) y el **ángulo de tono** `H* = arctan2(b*, a*)` (dirección del color en el plano a*b*). Luego se evalúa cada una de las 8 emociones posibles con una función gaussiana que mide la similitud del producto con el centroide de esa emoción en los tres ejes (L*, C*, H*). La emoción ganadora es la de mayor score. Si ninguna supera el umbral de confianza de 0.22, el producto se clasifica como "Neutro/Ambiguo".
-
-**Las 8 emociones posibles:**
-
-| Emoción | Perfil de color típico |
-|---|---|
-| **Alegría** | L* alto (~80), Croma medio-alto, tono amarillo-naranja |
-| **Relajación** | L* muy alto (~92), Croma muy bajo, colores casi neutros |
-| **Calma** | L* alto (~85), Croma bajo, tonos fríos (azul-verde) |
-| **Energía** | L* medio-alto (~62), Croma alto, tonos cálidos |
-| **Romanticismo** | L* medio (~50), Croma medio, tonos rosados |
-| **Aburrimiento** | L* medio-alto (~70), Croma muy bajo, sin tono definido |
-| **Tristeza** | L* medio-bajo (~42), Croma casi nulo, tonos fríos |
-| **Ira** | L* muy bajo (~22), Croma bajo, tonos rojizos |
-
-Además de la emoción ganadora, se calculan:
-- `confianza_emocional`: probabilidad softmax de la emoción ganadora (entre 0 y 1).
-- `score_alegria`, `score_calma`, ...: score individual de cada emoción (captura la ambigüedad).
-- `distancia_centroide`: distancia euclidiana al centroide de la emoción asignada (qué tan "puro" es el producto dentro de su emoción).
-
-#### Paso 9 — Variables de negocio
-Variables pensadas para dar valor interpretativo al análisis desde una perspectiva de marketing:
-
-- **`temperatura_color`**: Clasifica el color en `Cálido` (a* > 3 o b* > 10), `Frío` (a* < -3 o b* < -5) o `Neutro`.
-- **`luminosidad_cat`**: Categoriza L* en tres grupos: `Oscuro` (0-40), `Medio` (40-70), `Luminoso` (70-100).
-- **`saturacion_cat`**: Categoriza hsv_s en `Apagado` (0-25), `Moderado` (25-60), `Intenso` (60-100).
-- **`emocion_optima`**: Emoción que debería transmitir el producto según su categoría (basado en criterios de psicología del color y marketing). Por ejemplo: Cervezas → Relajación, Refrescos → Energía, Chocolates → Romanticismo.
- 
-#### Paso 10 — Normalización Min-Max
-Aplica normalización Min-Max a las 10 variables numéricas de color (`mean_R`, `mean_G`, `mean_B`, `mean_L`, `mean_a`, `mean_b`, `contrast_L`, `hsv_h`, `hsv_s`, `hsv_v`), generando columnas `*_norm` con valores en el rango [0, 1] para que el modelo no se vea afectado por diferencias de escala entre variables.
-
-#### Paso 11 — Gráficos del análisis exploratorio
-Genera 11 gráficos y los guarda en `DATOS SCRAPPING/graficos/`:
-
-| Gráfico | Descripción |
-|---|---|
-| `01_histograma_L_capping.png` | Histograma de L* antes y después del tratamiento de outliers (comparativa) |
-| `02_distribucion_emociones.png` | Distribución de las 8 emociones en el dataset completo |
-| `03_boxplot_mean_L.png` | Boxplot de luminosidad L* por emoción |
-| `04_boxplot_mean_a.png` | Boxplot del componente a* (rojo-verde) por emoción |
-| `05_boxplot_mean_b.png` | Boxplot del componente b* (amarillo-azul) por emoción |
-| `06_correlacion.png` | Matriz de correlación entre variables de color (L*, a*, b*, contrast_L, HSV) |
-| `07_paleta_cromatica.png` | Paleta de colores real del dataset: un rectángulo por producto ordenados por tono |
-| `08_heatmap_emocion_categoria.png` | Mapa de calor: % de productos con cada emoción en las 12 categorías principales |
-| `09_scatter_L_a.png` | Scatter L* vs a* coloreado por emoción (demuestra separabilidad en CIELAB) |
-| `10_alineacion_emocional.png` | Alineación emocional por categoría (% de productos con emoción óptima) |
-| `11_scatter_L_b_fuentes.png` | Scatter L* vs b* diferenciando por fuente de datos |
-
-**Librerías:** `pandas`, `numpy`, `matplotlib`, `sklearn` (MinMaxScaler)
+**Output:** `Dataset_combinado_sin_emociones.csv` — ~10.000 productos × 11 columnas.
 
 ---
 
-### Script 3 — `SCRIPT 3 - CREACIÓN DE MODELOS.py`
+## 6. Script 2 — Ingeniería del dato
 
-**Propósito:** Análisis del dato completo. Parte del `Dataset_con_emociones.csv` y entrena tres modelos de machine learning para predecir la emoción de un producto a partir de sus variables de color. Genera 12 gráficos, guarda los modelos entrenados y exporta las métricas en JSON y Excel.
+**Archivo:** `SCRIPT 2, VARIABLES ECONOMICAS, EMOCIONAS E INGENIERIA DEL DATO.py`
 
-#### Variables de entrada (features)
+Pipeline de ingeniería del dato en 12 pasos. Transforma el dataset bruto en el dataset final listo para entrenar los modelos ML.
 
-El modelo recibe las **10 variables de color normalizadas** (Min-Max) calculadas en el Script 2:
+### Paso 1 — Gráficos del estado inicial
+Genera `0a_distribucion_fuente.png` y `0b_distribucion_categoria.png` antes de ninguna transformación para documentar el punto de partida.
+
+### Paso 2 — Tratamiento de nulos
+- Menos del 1% de nulos: elimina las filas.
+- 1% o más: sustituye por la **mediana** (más robusta que la media frente a outliers).
+
+### Paso 3 — Eliminación de duplicados
+Elimina filas con la misma URL de imagen, usándola como identificador único del producto.
+
+### Paso 4 — Validación de rangos teóricos
+Verifica que los valores están dentro de los rangos físicamente posibles. Documenta cualquier anomalía.
+
+### Paso 5 — Outliers: IQR con capping
+Aplica rango intercuartílico (Q1 - 1.5·IQR, Q3 + 1.5·IQR). Los colores extremos no se eliminan (son información válida), se limitan al borde del rango. Genera `1_antes_despues_outliers.png`.
+
+### Paso 6 — Variables HSV
+
+| Variable | Descripción | Rango |
+|---|---|---|
+| `hsv_h` | Tono: ángulo de color (0=rojo, 120=verde, 240=azul) | 0-360 |
+| `hsv_s` | Saturación: pureza del color | 0-100% |
+| `hsv_v` | Brillo: luminosidad en escala HSV | 0-100% |
+
+### Paso 7 — Asignación de emoción (scoring gaussiano ponderado)
+
+**Aportación metodológica central.** Asigna una emoción a cada producto sin etiquetado manual, usando funciones gaussianas en el espacio CIELAB calibradas con la literatura científica (Valdez & Mehrabian 1994, Gilbert et al. 2016, Russell 1980).
+
+Las 8 emociones con sus centroides:
+
+| Emoción | Centro L* | Centro C* | Peso L* | Peso C* | Peso H* |
+|---|---|---|---|---|---|
+| Ira | 22 | 10 | 0.50 | 0.35 | 0.15 |
+| Tristeza | 42 | 4 | 0.65 | 0.30 | 0.05 |
+| Romanticismo | 50 | 12 | 0.30 | 0.35 | 0.35 |
+| Energía | 62 | 15 | 0.25 | 0.40 | 0.35 |
+| Alegría | 80 | 16 | 0.30 | 0.35 | 0.35 |
+| Relajación | 92 | 3 | 0.70 | 0.25 | 0.05 |
+| Calma | 85 | 5 | 0.55 | 0.30 | 0.15 |
+| Aburrimiento | 70 | 5 | 0.40 | 0.40 | 0.20 |
+
+**Proceso:** Se calcula Croma C* y ángulo de tono H*. Para cada emoción se evalúa la gaussiana en L*, C* y H*, se suman con sus pesos y los 8 scores se normalizan con softmax. La emoción ganadora es la de mayor probabilidad. Si ninguna supera 0.22, se asigna "Neutro/Ambiguo".
+
+Además de la emoción ganadora, se añaden las **8 columnas de score individual** que son los targets del modelo SVR.
+
+### Paso 8 — Variables de negocio
 
 | Variable | Descripción |
 |---|---|
-| `mean_R_norm`, `mean_G_norm`, `mean_B_norm` | Canales RGB normalizados |
-| `mean_L_norm`, `mean_a_norm`, `mean_b_norm` | Variables CIELAB normalizadas |
-| `contrast_L_norm` | Contraste de luminosidad normalizado |
-| `hue_norm`, `saturation_norm`, `value_norm` | Tono, saturación y brillo HSV normalizados |
+| `temperatura_color` | "Cálido" / "Frío" / "Neutro" según valores de a* y b* |
+| `luminosidad_cat` | "Oscuro" / "Medio" / "Luminoso" según L* |
+| `saturacion_cat` | "Apagado" / "Moderado" / "Intenso" según hsv_s |
+| `coherencia_emocional` | 0-100: qué tan centrado está el producto en su zona emocional |
+| `emocion_optima` | Emoción que debería transmitir esa categoría (diccionario de 90+ categorías) |
+| `alineacion_emocional` | 1 si transmite la emoción óptima para su categoría, 0 si no |
 
-#### División train/test
+### Paso 9 — Normalización Min-Max
+Escala las 10 variables numéricas a [0, 1] con el sufijo `_norm` para que el SVR no se vea afectado por diferencias de escala.
 
-- **80/20** estratificado (misma proporción de emociones en train y test).
-- 4.465 productos totales → 3.572 entrenamiento / 893 test.
-- Validación cruzada de **5 folds** para estimar la estabilidad de los modelos.
-
-#### Modelo 1 — Random Forest Classifier
-
-**Qué es:** Ensamble de árboles de decisión entrenados con bagging (muestreo bootstrap) y selección aleatoria de variables en cada nodo (`max_features="sqrt"`). La predicción final es la moda de los votos de todos los árboles.
-
-**Por qué se elige:** Las relaciones color-emoción son no lineales (por ejemplo, Romanticismo requiere L* < 55 Y a* ≥ 4 simultáneamente). El Random Forest las captura sin suposiciones sobre la distribución. Además, `class_weight="balanced"` compensa el desbalance de clases sin necesidad de re-muestreo.
-
-**Búsqueda de hiperparámetros:** `RandomizedSearchCV` con 25 iteraciones × 5-fold, optimizando F1 ponderado. Se exploran combinaciones de `n_estimators`, `max_depth`, `min_samples_leaf` y `max_features`.
-
-**Resultados:**
-
-| Métrica | Valor |
-|---|---|
-| Accuracy test | **89.03%** |
-| F1 ponderado | **88.97%** |
-| Precision | 89.06% |
-| Recall | 89.03% |
-| CV 5-fold (media ± std) | 89.05% ± 0.17% |
-
-F1 por clase: Relajación (97.8%), Energía (91.8%), Tristeza (91.6%), Romanticismo (89.9%), Aburrimiento (88.8%), Alegría (88.1%), Ira (83.3%), Calma (81.6%), Neutro/Ambiguo (82.4%).
-
-#### Modelo 2 — Red Neuronal MLP (Multilayer Perceptron)
-
-**Qué es:** Red neuronal de capas densas entrenada con backpropagation y Adam. Captura relaciones muy no lineales entre las variables de color y las emociones.
-
-**Por qué se elige:** Complementa al Random Forest con un tipo de modelo completamente diferente (conexionista vs. basado en reglas), lo que permite comparar si ambos enfoques convergen a los mismos resultados y valida la robustez del dataset.
-
-**Entrenamiento:** Con `early_stopping=True` para detener el entrenamiento cuando la validación deja de mejorar, evitando el sobreajuste. En este caso convergió en **108 épocas**.
-
-**Resultados:**
-
-| Métrica | Valor |
-|---|---|
-| Accuracy test | **88.47%** |
-| F1 ponderado | **88.45%** |
-| Precision | 88.97% |
-| Recall | 88.47% |
-| CV 5-fold (media ± std) | 88.72% ± 1.34% |
-
-F1 por clase: Tristeza (92.4%), Relajación (96.1%), Energía (90.4%), Romanticismo (89.7%), Aburrimiento (88.4%), Ira (84.6%), Calma (86.4%), Alegría (84.6%), Neutro/Ambiguo (81.8%).
-
-#### Modelo 3 — MultiOutput SVR (modelo original)
-
-**Qué es:** Un modelo de regresión de vectores de soporte (SVR) envuelto en `MultiOutputRegressor` para predecir simultáneamente los **8 scores emocionales** de un producto en lugar de clasificar en una sola emoción. Esto permite obtener el **perfil emocional completo** de cada producto (cuánto transmite de alegría, calma, energía, etc.).
-
-**Por qué es original:** A diferencia de los dos clasificadores anteriores, este modelo no etiqueta el producto con una única emoción sino que devuelve un vector de 8 valores continuos. Esto captura la ambigüedad emocional: un producto puede transmitir a la vez relajación y calma en proporciones distintas, información que se pierde con la clasificación.
-
-**Resultados:**
-
-| Métrica | Valor |
-|---|---|
-| R² global | **0.9781** |
-| RMSE global | **0.0093** |
-
-R² por emoción: Relajación (0.988), Tristeza (0.987), Energía (0.985), Calma (0.984), Aburrimiento (0.982), Romanticismo (0.978), Alegría (0.968), Ira (0.955).
-
-#### Gráficos generados (G1–G12)
+### Paso 10 — 12 gráficos de análisis
 
 | Gráfico | Descripción |
 |---|---|
-| `G1_distribucion_emociones.png` | Distribución de emociones en el dataset con línea de distribución uniforme |
-| `G2_correlacion_features.png` | Heatmap de correlación entre las 10 variables cromáticas de entrada |
-| `G3_curva_aprendizaje_RF.png` | Curva de aprendizaje del Random Forest (train vs. validación) |
-| `G4_importancia_variables_RF.png` | Importancia de cada variable cromática según el Random Forest |
-| `G5_matriz_confusion_RF.png` | Matriz de confusión del Random Forest (porcentaje por fila) |
-| `G6_curva_perdida_MLP.png` | Curva de pérdida durante el entrenamiento de la red neuronal |
-| `G7_matriz_confusion_MLP.png` | Matriz de confusión de la MLP |
-| `G8_comparativa_F1_RF_vs_MLP.png` | Comparativa de F1 por clase entre Random Forest y MLP |
-| `G9_pred_vs_real_scores.png` | Predicción vs. real de los 8 scores emocionales (modelo SVR) |
-| `G10_perfiles_emocionales.png` | Perfil emocional predicho vs. real para productos de ejemplo |
-| `G11_r2_por_emocion_SVR.png` | R² por emoción del modelo MultiOutput SVR |
-| `G12_resumen_comparativo.png` | Resumen comparativo final de los tres modelos |
+| `0a_distribucion_fuente.png` | Productos por fuente de datos |
+| `0b_distribucion_categoria.png` | Top 15 categorías con más productos |
+| `1_antes_despues_outliers.png` | L* antes y después del capping |
+| `2_distribucion_emociones.png` | Distribución de las 8 emociones |
+| `boxplot_mean_L/a/b.png` | Variables CIELAB por emoción (análisis bivariante) |
+| `6_correlacion.png` | Matriz de correlación entre variables cromáticas |
+| `7_paleta_colores_real.png` | Franja de color de todos los productos ordenada por tono |
+| `8_mapa_calor_emocion_categoria.png` | Emoción predominante por categoría (%) |
+| `9_scatter_separabilidad.png` | Separabilidad emocional en espacio CIELAB (L* vs a*) |
+| `10_alineacion_por_categoria.png` | % de alineación emocional por categoría |
+| `11_posicionamiento_cromatico.png` | Posicionamiento de cada fuente en L* vs b* |
+| `12_contraste_por_emocion.png` | Contraste visual interno por emoción asignada |
 
-#### Salidas del Script 3
-
-- **`resultados_analisis.json`** — Todas las métricas de los tres modelos en formato estructurado.
-- **`resultados_analisis.xlsx`** — Las mismas métricas en Excel para presentación.
-- **`modelos/modelo_random_forest.pkl`** — Random Forest entrenado y listo para usar.
-- **`modelos/modelo_mlp.pkl`** — Red neuronal MLP entrenada.
-- **`modelos/modelo_multioutput_svr.pkl`** — MultiOutput SVR entrenado.
-- **`modelos/label_encoder.pkl`** — Codificador de etiquetas para decodificar las predicciones.
-
-**Librerías:** `pandas`, `numpy`, `matplotlib`, `scikit-learn`, `joblib`, `openpyxl`
+**Output:** `Dataset_con_emociones.csv` — dataset final con 30+ columnas listo para ML.
 
 ---
 
-## Dataset final (`Dataset_con_emociones.csv`)
+## 7. Datasets
 
-El dataset final tiene las siguientes columnas:
-
-| Columna | Tipo | Descripción |
-|---|---|---|
-| `fuente` | Categórica | Origen del producto: ABO / Mahou San Miguel / Open Food Facts |
-| `categoria` | Categórica | Categoría del producto (ej. Cervezas, Hogar - Sofás...) |
-| `nombre` | Texto | Nombre del producto |
-| `imagen_url` | Texto | URL de la imagen usada para calcular el color |
-| `mean_R` / `mean_G` / `mean_B` | Numérica | Media RGB pixel a pixel (0-255) |
-| `mean_L` / `mean_a` / `mean_b` | Numérica | Variables CIELAB |
-| `contrast_L` | Numérica | Contraste de luminosidad (desv. típica de L*) |
-| `hsv_h` / `hsv_s` / `hsv_v` | Numérica | Tono, saturación y brillo (HSV) |
-| `emocion` | Categórica | Emoción asignada (8 posibles + Neutro/Ambiguo) |
-| `confianza_emocional` | Numérica [0-1] | Confianza del sistema de scoring en la emoción asignada |
-| `score_alegria` / ... | Numérica | Score individual para cada una de las 8 emociones |
-| `distancia_centroide` | Numérica | Distancia euclidiana al centroide de la emoción asignada |
-| `temperatura_color` | Categórica | Cálido / Frío / Neutro |
-| `luminosidad_cat` | Categórica | Oscuro / Medio / Luminoso |
-| `saturacion_cat` | Categórica | Apagado / Moderado / Intenso |
-| `emocion_optima` | Categórica | Emoción que debería transmitir según su categoría |
-| `mean_*_norm` | Numérica [0-1] | Versiones normalizadas Min-Max de las variables de color |
+| Fichero | Descripción | Filas aprox. | Columnas |
+|---|---|---|---|
+| `Dataset_combinado_sin_emociones.csv` | Output de Script 1. Variables cromáticas brutas | ~10.000 | 11 |
+| `Dataset_con_emociones.csv` | Output de Script 2. Dataset completo para ML | ~10.000 | 30+ |
+| `abo_data/dataset_abo.csv` | Mini-dataset Amazon Berkeley Objects | ~8.000 | 11 |
+| `mahou_data/dataset_mahou.csv` | Mini-dataset Mahou San Miguel | ~81 | 11 |
+| `openfoodfacts_data/dataset_openfoodfacts.csv` | Mini-dataset Open Food Facts | ~2.000 | 11 |
 
 ---
 
-## Orden de ejecución
+## 8. Modelos de Machine Learning
 
-Para reproducir el proyecto desde cero:
+**Features de entrada:** 10 variables cromáticas normalizadas (`mean_R_norm`, `mean_G_norm`, `mean_B_norm`, `mean_L_norm`, `mean_a_norm`, `mean_b_norm`, `contrast_L_norm`, `hsv_h_norm`, `hsv_s_norm`, `hsv_v_norm`).
+
+### Modelo 1 — Random Forest Classifier
+- **Target:** `emocion` (9 clases incluyendo Neutro/Ambiguo)
+- Clasifica cada producto en su emoción dominante. Alta interpretabilidad mediante importancia de variables.
+
+### Modelo 2 — Red Neuronal MLP (Perceptrón Multicapa)
+- **Target:** `emocion` (mismas 9 clases)
+- Mayor capacidad para detectar patrones no lineales en el espacio cromático.
+
+### Modelo 3 — MultiOutput SVR (aportación original del TFG)
+- **Target:** Los 8 scores emocionales en continuo
+- Predice el **perfil emocional completo**: no solo la emoción dominante, sino la intensidad de las 8 emociones simultáneamente.
+- Un packaging dorado puede ser alegre (0.42) + energético (0.31) + romántico (0.18). Un clasificador pierde toda esa riqueza; el SVR la preserva.
+- **Métrica:** R2 y RMSE por emoción.
+
+---
+
+## 9. Variables del sistema
+
+### Variables cromáticas (features del modelo)
+
+| Variable | Espacio | Descripción | Rango |
+|---|---|---|---|
+| `mean_R/G/B` | RGB | Media de cada canal de color | 0-255 |
+| `mean_L` | CIELAB | Luminosidad media | 0-100 |
+| `mean_a` | CIELAB | Componente rojo-verde | -128 a 128 |
+| `mean_b` | CIELAB | Componente amarillo-azul | -128 a 128 |
+| `contrast_L` | CIELAB | Contraste interno (desv. típica de L*) | 0-100 |
+| `hsv_h` | HSV | Tono (ángulo de color) | 0-360 |
+| `hsv_s` | HSV | Saturación | 0-100% |
+| `hsv_v` | HSV | Brillo | 0-100% |
+
+### Variables emocionales (targets del modelo SVR)
+
+`score_alegria` · `score_energia` · `score_calma` · `score_romanticismo` · `score_tristeza` · `score_ira` · `score_relajacion` · `score_aburrimiento`
+
+### Variables de negocio
+
+`temperatura_color` · `luminosidad_cat` · `saturacion_cat` · `coherencia_emocional` · `emocion_optima` · `alineacion_emocional`
+
+---
+
+## 10. Marco teórico y referencias
+
+- **Valdez & Mehrabian (1994):** Cuantifica la relación entre luminosidad (L*) y respuestas emocionales pasivas (placer-arousal).
+- **Gilbert et al. (2016):** Mapa de asociaciones implícitas color-emoción. Establece los pesos de Croma (C*) y ángulo de tono (H*) para emociones activas.
+- **Russell (1980):** Modelo circunflejo del afecto. Las emociones se organizan en un espacio bidimensional continuo (valencia x activación), lo que justifica el enfoque de regresión del SVR.
+- **Espacio CIELAB:** Estándar CIE 1976. Distancias iguales corresponden a diferencias perceptivas iguales para el ojo humano.
+
+---
+
+## 11. Requisitos técnicos
 
 ```bash
-# 1. Explorar la estructura de las fuentes (opcional, informativo)
-python "Exploración Inicial de las 3 fuentes de datos.py"
-
-# 2. Scraping + extracción de color (tarda varias horas por la descarga de imágenes)
-python "SCRIPT 1 - SCRAPING Y COLOR.py"
-
-# 3. Ingeniería del dato + emociones + gráficos
-python "SCRIPT 2, VARIABLES ECONOMICAS, EMOCIONAS E INGENIERIA DEL DATO.py"
-
-# 4. Entrenamiento de modelos ML + análisis del dato (tarda ~5-10 min)
-python "SCRIPT 3 - CREACIÓN DE MODELOS.py"
+pip install requests pandas numpy matplotlib pillow scikit-image tqdm selenium webdriver-manager scikit-learn
 ```
 
-## Dependencias
+Google Chrome debe estar instalado para el scraper de Mahou (ChromeDriver se descarga automáticamente con `webdriver-manager`).
 
-```
-pandas
-numpy
-matplotlib
-Pillow
-scikit-image
-scikit-learn
-tqdm
-requests
-selenium
-webdriver-manager
-joblib
-openpyxl
-```
+**Orden de ejecución:** Script 0 → Script 1 → Script 2 → Script de modelos.
 
+---
+
+*TFG Business Analytics · Universidad Francisco de Vitoria · Adrián Julve Navarro · 2025-2026*
